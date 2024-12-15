@@ -32,7 +32,9 @@ Code for displaying Air Gradient sensor information on a CircuitPython LED RGB m
 
 # Display
 - Temperature
+  - Changes color based on how cold/hot it is
 - Humidity (corrected)
+  - Droplet changes size based on how humid it is
 - PM02 (corrected)
 
 # Notes
