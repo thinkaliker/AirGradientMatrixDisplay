@@ -18,6 +18,7 @@ import board
 import busio
 import displayio
 import terminalio
+import microcontroller
 from digitalio import DigitalInOut, Direction, Pull
 import adafruit_connection_manager
 import adafruit_requests
@@ -99,9 +100,11 @@ print("Fetching text from", DATA_SOURCE)
 
 main_display = custom_display.CustomDisplay(matrix.display)
 
+reset_counter = 0
+
 while True:
     try:
-        req = requests.get(DATA_SOURCE, headers={'Connection': 'close'})
+        req = requests.get(DATA_SOURCE, timeout=120, headers={'Connection': 'close'})
         recv_data = req.json()
         current_atmp = float(recv_data['atmpCompensated']) * (9 / 5) + 32
         current_hum = float(recv_data['rhumCompensated'])
@@ -113,5 +116,8 @@ while True:
         gc.collect()
         req.close()
     except Exception as e:
-        pass
-    time.sleep(30)
+        reset_counter += 1
+
+    if reset_counter > 10:
+        microcontroller.reset()
+    time.sleep(60)
