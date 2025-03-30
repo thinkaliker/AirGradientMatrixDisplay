@@ -589,3 +589,12 @@ class CustomDisplay(displayio.Group):
         self.temperature = temperature
         self.humidity = humidity
         self.pm02 = pm02
+    
+    def set_temperature(self, temperature):
+        self.temperature = temperature
+    
+    def set_humidity(self, humidity):
+        self.humidity = int(humidity)
+    
+    def set_pm02(self, pm02):
+        self.pm02 = int(pm02)

@@ -36,8 +36,10 @@ Code for displaying Air Gradient sensor information on a CircuitPython LED RGB m
 - Humidity (corrected)
   - Droplet changes size based on how humid it is
 - PM02 (corrected)
+  - for some reason the third topic doesn't work with MQTT
 
 # Notes
 - The Adafruit requests library has issues with lots of requests after some time. The try except is intened to try to fix that.
 - I could not get the matrixportal Network library to work with my Metro M4. I ended up using the example code to establish a connection. This also means the onboard NeoPixel doesn't show network status.
 - The display only shows F.
+- MQTT is the new implementation because I couldn't query the endpoint directly anymore for some reason.

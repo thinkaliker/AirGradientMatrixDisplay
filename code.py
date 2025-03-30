@@ -26,12 +26,16 @@ from adafruit_display_text import label
 #from adafruit_matrixportal.network import Network
 from adafruit_matrixportal.matrix import Matrix
 from adafruit_esp32spi import adafruit_esp32spi
+import adafruit_minimqtt.adafruit_minimqtt as MQTT
 
 import custom_display
 
 secrets = {
     "ssid": getenv("CIRCUITPY_WIFI_SSID"),
     "password": getenv("CIRCUITPY_WIFI_PASSWORD"),
+    "mqtt_host": getenv("MQTT_BROKER"),
+    "mqtt_user": getenv("MQTT_USER"),
+    "mqtt_pass": getenv("MQTT_PASS")
 }
 gc.enable()
 matrix = Matrix(width=32, height=32)
@@ -92,32 +96,90 @@ while not esp.is_connected:
 print("Connected to", esp.ap_info.ssid, "\tRSSI:", esp.ap_info.rssi)
 print("IP address is", esp.ipv4_address)
 
-DATA_SOURCE = (
-    #"http://api.openweathermap.org/data/2.5/weather?q=" + LOCATION + "&units=" + UNITS
-    "http://" + getenv("AIRGRADIENT_IP") + "/measures/current"
+# Set up a MiniMQTT Client
+mqtt_client = MQTT.MQTT(
+    broker=secrets["mqtt_host"],
+    username=secrets["mqtt_user"],
+    password=secrets["mqtt_pass"],
+    socket_pool=pool,
+    ssl_context=ssl_context,
 )
-print("Fetching text from", DATA_SOURCE)
+
+mqtt_topic_temp = f"homeassistant/sensor/ag_outdoors_temperature/state"
+mqtt_topic_hum = f"homeassistant/sensor/ag_outdoors_humidity/state"
+mqtt_topic_pm25 = f"homeassistant/sensor/ag_outdoors_pm2_5/state"
+
+current_atmp = 0.0
+current_hum = 0.0
+current_pm02 = 0.0
 
 main_display = custom_display.CustomDisplay(matrix.display)
+
+# Define callback methods which are called when events occur
+def connect(mqtt_client, userdata, flags, rc):
+    # This function will be called when the mqtt_client is connected
+    # successfully to the broker.
+    print("Connected to MQTT Broker!")
+    print(f"Flags: {flags}\n RC: {rc}")
+
+def disconnect(mqtt_client, userdata, rc):
+    # This method is called when the mqtt_client disconnects
+    # from the broker.
+    print("Disconnected from MQTT Broker!")
+
+def subscribe(mqtt_client, userdata, topic, granted_qos):
+    # This method is called when the mqtt_client subscribes to a new feed.
+    print(f"Subscribed to {topic} with QOS level {granted_qos}")
+
+def unsubscribe(mqtt_client, userdata, topic, pid):
+    # This method is called when the mqtt_client unsubscribes from a feed.
+    print(f"Unsubscribed from {topic} with PID {pid}")
+
+def publish(mqtt_client, userdata, topic, pid):
+    # This method is called when the mqtt_client publishes data to a feed.
+    print(f"Published to {topic} with PID {pid}")
+
+def message(client, topic, message):
+    print(f"New message on topic {topic}: {message}")
+    if topic == mqtt_topic_temp:
+        current_atmp = float(message)
+        main_display.set_temperature(current_atmp)
+    if topic == mqtt_topic_hum:
+        current_hum = float(message)
+        main_display.set_humidity(current_hum)
+    if topic == mqtt_topic_pm25:
+        current_pm02 = float(message)
+        main_display.set_pm02(current_pm02)
+
+# Connect callback handlers to mqtt_client
+mqtt_client.on_connect = connect
+mqtt_client.on_disconnect = disconnect
+mqtt_client.on_subscribe = subscribe
+mqtt_client.on_unsubscribe = unsubscribe
+mqtt_client.on_publish = publish
+mqtt_client.on_message = message
+
+print(f"Attempting to connect to {mqtt_client.broker}")
+mqtt_client.connect()
+
+print(f"Subscribing to {mqtt_topic_temp}")
+mqtt_client.subscribe(mqtt_topic_temp)
+
+print(f"Subscribing to {mqtt_topic_hum}")
+mqtt_client.subscribe(mqtt_topic_hum)
+
+print(f"Subscribing to {mqtt_topic_pm25}")
+mqtt_client.subscribe(mqtt_topic_pm25)
 
 reset_counter = 0
 
 while True:
     try:
-        req = requests.get(DATA_SOURCE, timeout=120, headers={'Connection': 'close'})
-        recv_data = req.json()
-        current_atmp = float(recv_data['atmpCompensated']) * (9 / 5) + 32
-        current_hum = float(recv_data['rhumCompensated'])
-        current_pm02 = float(recv_data['pm02Compensated'])
-        print('atmp ' + str(current_atmp) + '\t' + 'hum ' + str(current_hum) + '\tpm02 ' + str(current_pm02))
-        #screen_text.text = str(current_atmp) + '\n' + str(current_hum)
-        main_display.set_environmentals(current_atmp, current_hum, current_pm02)
         main_display.update_display()
         gc.collect()
-        req.close()
     except Exception as e:
+        print("err: ", str(e))
         reset_counter += 1
-
     if reset_counter > 10:
         microcontroller.reset()
     time.sleep(60)

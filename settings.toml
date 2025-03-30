@@ -1,3 +1,7 @@
 CIRCUITPY_WIFI_SSID = "<ssid>"
 CIRCUITPY_WIFI_PASSWORD = "<password>"
 AIRGRADIENT_IP = "<local airgradient address>"
+
+MQTT_BROKER = "<mqtt broker ip>"
+MQTT_USER = "<mqtt broker username>"
+MQTT_PASS = "<mqtt broker password>"
