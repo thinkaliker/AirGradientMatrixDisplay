@@ -109,10 +109,6 @@ mqtt_topic_temp = f"homeassistant/sensor/ag_outdoors_temperature/state"
 mqtt_topic_hum = f"homeassistant/sensor/ag_outdoors_humidity/state"
 mqtt_topic_pm25 = f"homeassistant/sensor/ag_outdoors_pm2_5/state"
 
-current_atmp = 0.0
-current_hum = 0.0
-current_pm02 = 0.0
-
 main_display = custom_display.CustomDisplay(matrix.display)
 
 # Define callback methods which are called when events occur
@@ -142,14 +138,11 @@ def publish(mqtt_client, userdata, topic, pid):
 def message(client, topic, message):
     print(f"New message on topic {topic}: {message}")
     if topic == mqtt_topic_temp:
-        current_atmp = float(message)
-        main_display.set_temperature(current_atmp)
+        main_display.set_temperature(float(message))
     if topic == mqtt_topic_hum:
-        current_hum = float(message)
-        main_display.set_humidity(current_hum)
+        main_display.set_humidity(float(message))
     if topic == mqtt_topic_pm25:
-        current_pm02 = float(message)
-        main_display.set_pm02(current_pm02)
+        main_display.set_pm02(float(message))
 
 # Connect callback handlers to mqtt_client
 mqtt_client.on_connect = connect
@@ -177,9 +170,10 @@ while True:
     try:
         main_display.update_display()
         gc.collect()
+        mqtt_client.loop()
     except Exception as e:
         print("err: ", str(e))
         reset_counter += 1
     if reset_counter > 10:
         microcontroller.reset()
-    time.sleep(60)
+    time.sleep(5)
