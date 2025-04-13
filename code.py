@@ -107,7 +107,7 @@ mqtt_client = MQTT.MQTT(
 
 mqtt_topic_temp = f"homeassistant/sensor/ag_outdoors_temperature/state"
 mqtt_topic_hum = f"homeassistant/sensor/ag_outdoors_humidity/state"
-mqtt_topic_pm25 = f"homeassistant/sensor/ag_outdoors_pm2_5/state"
+mqtt_topic_aqi = f"homeassistant/sensor/ag_outdoors_calc_aqi/state"
 
 main_display = custom_display.CustomDisplay(matrix.display)
 
@@ -141,8 +141,8 @@ def message(client, topic, message):
         main_display.set_temperature(float(message))
     if topic == mqtt_topic_hum:
         main_display.set_humidity(float(message))
-    if topic == mqtt_topic_pm25:
-        main_display.set_pm02(float(message))
+    if topic == mqtt_topic_aqi:
+        main_display.set_aqi(float(message))
 
 # Connect callback handlers to mqtt_client
 mqtt_client.on_connect = connect
@@ -161,8 +161,8 @@ mqtt_client.subscribe(mqtt_topic_temp)
 print(f"Subscribing to {mqtt_topic_hum}")
 mqtt_client.subscribe(mqtt_topic_hum)
 
-print(f"Subscribing to {mqtt_topic_pm25}")
-mqtt_client.subscribe(mqtt_topic_pm25)
+print(f"Subscribing to {mqtt_topic_aqi}")
+mqtt_client.subscribe(mqtt_topic_aqi)
 
 reset_counter = 0
 

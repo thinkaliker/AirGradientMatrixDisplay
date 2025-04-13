@@ -14,7 +14,7 @@ class CustomDisplay(displayio.Group):
         super().__init__()
         self.display = display
         self.bitmap = displayio.Bitmap(32, 32, 16)
-        self.color = displayio.Palette(10)
+        self.color = displayio.Palette(13)
         self.color[0] = 0x000000  # black background
         self.color[1] = 0xFF0000  # red
         self.color[2] = 0xCC4000  # amber
@@ -25,6 +25,9 @@ class CustomDisplay(displayio.Group):
         self.color[7] = 0x00FF0F  # good
         self.color[8] = 0xFFAA00  # warm
         self.color[9] = 0xFF1000  # hot
+        self.color[10] = 0x9900FF # purple
+        self.color[11] = 0xFF00FF # magenta
+        self.color[12] = 0xFFFFFF # white
         self.tile_grid = displayio.TileGrid(self.bitmap, pixel_shader=self.color)
         self.root_group = displayio.Group()
         self.root_group.append(self)
@@ -32,8 +35,10 @@ class CustomDisplay(displayio.Group):
         self.append(self.big_digits)
         self.hum_digits = displayio.Group()
         self.append(self.hum_digits)
-        self.pm02_digits = displayio.Group()
-        self.append(self.pm02_digits)
+        self.aqi_digits = displayio.Group()
+        self.append(self.aqi_digits)
+        self.aqi_text = displayio.Group()
+        self.append(self.aqi_text)
         self.lines = displayio.Group()
         self.append(self.lines)
         self.icons = displayio.Group()
@@ -42,7 +47,8 @@ class CustomDisplay(displayio.Group):
 
         self.temperature = 888.8
         self.humidity = 888
-        self.pm02 = 888
+        self.aqi = 888
+        self.init_aqi()
         self.make_lines()
         self.make_icons()
         self.update_display()
@@ -85,16 +91,71 @@ class CustomDisplay(displayio.Group):
         )
         self.icons.append(Line(22, 14, 18, 20, self.color[4]))
         # pm02
-        self.icons.append(Line(18, 25, 18, 28, self.color[2]))
-        self.icons.append(Line(19, 25, 19, 26, self.color[2]))
-        self.icons.append(Line(21, 25, 21, 28, self.color[2]))
-        self.icons.append(Line(22, 25, 22, 26, self.color[2]))
-        self.icons.append(Line(23, 25, 23, 28, self.color[2]))
-        self.icons.append(Line(25, 27, 25, 30, self.color[2]))
-        self.icons.append(Line(26, 27, 26, 30, self.color[2]))
-        self.icons.append(Line(28, 27, 29, 27, self.color[2]))
-        self.icons.append(Line(29, 28, 28, 29, self.color[2]))
-        self.icons.append(Line(28, 30, 29, 30, self.color[2]))
+        #self.icons.append(Line(18, 25, 18, 28, self.color[2]))
+        #self.icons.append(Line(19, 25, 19, 26, self.color[2]))
+        #self.icons.append(Line(21, 25, 21, 28, self.color[2]))
+        #self.icons.append(Line(22, 25, 22, 26, self.color[2]))
+        #self.icons.append(Line(23, 25, 23, 28, self.color[2]))
+        #self.icons.append(Line(25, 27, 25, 30, self.color[2]))
+        #self.icons.append(Line(26, 27, 26, 30, self.color[2]))
+        #self.icons.append(Line(28, 27, 29, 27, self.color[2]))
+        #self.icons.append(Line(29, 28, 28, 29, self.color[2]))
+        #self.icons.append(Line(28, 30, 29, 30, self.color[2]))
+
+    def init_aqi(self):
+        #self.aqi_text.append(self.make_aqi_text_layer(self.color[3]))
+        #self.aqi_text.append(self.make_aqi_text_layer(self.color[2]))
+        #self.aqi_text.append(self.make_aqi_text_layer(self.color[8]))
+        #self.aqi_text.append(self.make_aqi_text_layer(self.color[1]))
+        #self.aqi_text.append(self.make_aqi_text_layer(self.color[10]))
+        #self.aqi_text.append(self.make_aqi_text_layer(self.color[11]))
+        self.aqi_text.append(self.make_aqi_text_layer(self.color[5]))
+        #for i in range(0, 6):
+        #    self.aqi_text[int(i)].hidden = True
+
+    def make_aqi(self, aqi, aqi_str):
+        aqi_color = self.color[3]
+        #for i in range(0, 6):
+        #    self.aqi_text[i].hidden = True
+            
+        if aqi <= 50:
+            aqi_color = self.color[3]
+            #self.aqi_text[0].hidden = False
+        elif aqi > 50 and aqi <= 100:
+            aqi_color = self.color[2]
+            #self.aqi_text[1].hidden = False
+        elif aqi > 100 and aqi <= 150:
+            aqi_color = self.color[8]
+            #self.aqi_text[2].hidden = False
+        elif aqi > 150 and aqi <= 200:
+            aqi_color = self.color[1]
+            #self.aqi_text[3].hidden = False
+        elif aqi > 200 and aqi <= 300:
+            aqi_color = self.color[10]
+            #self.aqi_text[4].hidden = False
+        elif aqi > 300:
+            aqi_color = self.color[11]
+            #self.aqi_text[5].hidden = False
+        
+        for i, ch in enumerate(aqi_str):
+            self.make_small_digit(ch, i, 2, aqi_color)
+    
+        
+    def make_aqi_text_layer(self, color):
+        aqi_text_layer = displayio.Group()
+        aqi_text_layer.append(Line(18, 25, 18, 30, color))
+        aqi_text_layer.append(Line(19, 24, 20, 24, color))
+        aqi_text_layer.append(Line(19, 27, 20, 27, color))
+        aqi_text_layer.append(Line(21, 25, 21, 30, color))
+        aqi_text_layer.append(Line(23, 25, 23, 29, color))
+        aqi_text_layer.append(Line(24, 30, 26, 28, color))
+        aqi_text_layer.append(Line(25, 29, 26, 30, color))
+        aqi_text_layer.append(Line(26, 25, 26, 28, color))
+        aqi_text_layer.append(Line(24, 24, 25, 24, color))
+        aqi_text_layer.append(Line(28, 24, 30, 24, color))
+        aqi_text_layer.append(Line(29, 24, 29, 30, color))
+        aqi_text_layer.append(Line(28, 30, 30, 30, color))
+        return aqi_text_layer
 
     def make_lines(self):
         self.lines.append(Line(1, 12, 30, 12, self.color[5]))
@@ -489,10 +550,10 @@ class CustomDisplay(displayio.Group):
             else:
                 self.hum_digits.insert(position, digit_group)
         else:
-            if len(self.pm02_digits) >= 3:
-                self.pm02_digits[position] = digit_group
+            if len(self.aqi_digits) >= 3:
+                self.aqi_digits[position] = digit_group
             else:
-                self.pm02_digits.insert(position, digit_group)
+                self.aqi_digits.insert(position, digit_group)
 
     def make_droplet(self, humidity):
         if humidity < 20:
@@ -575,26 +636,26 @@ class CustomDisplay(displayio.Group):
 
         self.make_droplet(self.humidity)
 
-        pm02_str = str(round(self.pm02))
-        if int(pm02_str) < 100:
-            pm02_str = "+" + pm02_str
-        if int(pm02_str) < 10:
-            pm02_str = "+" + pm02_str
+        aqi_str = str(round(self.aqi))
+        if int(aqi_str) < 100:
+            aqi_str = "+" + aqi_str
+        if int(aqi_str) < 10:
+            aqi_str = "+" + aqi_str
 
-        for i, ch in enumerate(pm02_str):
-            self.make_small_digit(ch, i, 2, self.color[2])
+        self.make_aqi(self.aqi, aqi_str)
+        
         gc.collect()
 
-    def set_environmentals(self, temperature, humidity, pm02):
+    def set_environmentals(self, temperature, humidity, aqi):
         self.temperature = temperature
         self.humidity = humidity
-        self.pm02 = pm02
-    
+        self.aqi = aqi
+
     def set_temperature(self, temperature):
         self.temperature = temperature
-    
+
     def set_humidity(self, humidity):
         self.humidity = int(humidity)
-    
-    def set_pm02(self, pm02):
-        self.pm02 = int(pm02)
+
+    def set_aqi(self, aqi):
+        self.aqi = int(aqi)
