@@ -138,11 +138,20 @@ def publish(mqtt_client, userdata, topic, pid):
 def message(client, topic, message):
     print(f"New message on topic {topic}: {message}")
     if topic == mqtt_topic_temp:
-        main_display.set_temperature(float(message))
+        try:
+            main_display.set_temperature(float(message))
+        except ValueError:
+            main_display.set_temperature(float(888.8))
     if topic == mqtt_topic_hum:
-        main_display.set_humidity(float(message))
+        try:
+            main_display.set_humidity(float(message))
+        except ValueError:
+            main_display.set_humidity(float(888))
     if topic == mqtt_topic_aqi:
-        main_display.set_aqi(float(message))
+        try:
+            main_display.set_aqi(float(message))
+        except ValueError:
+            main_display.set_aqi(float(888))
 
 # Connect callback handlers to mqtt_client
 mqtt_client.on_connect = connect

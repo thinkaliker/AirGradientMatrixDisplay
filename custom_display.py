@@ -117,7 +117,7 @@ class CustomDisplay(displayio.Group):
         aqi_color = self.color[3]
         #for i in range(0, 6):
         #    self.aqi_text[i].hidden = True
-            
+
         if aqi <= 50:
             aqi_color = self.color[3]
             #self.aqi_text[0].hidden = False
@@ -136,11 +136,11 @@ class CustomDisplay(displayio.Group):
         elif aqi > 300:
             aqi_color = self.color[11]
             #self.aqi_text[5].hidden = False
-        
+
         for i, ch in enumerate(aqi_str):
             self.make_small_digit(ch, i, 2, aqi_color)
-    
-        
+
+
     def make_aqi_text_layer(self, color):
         aqi_text_layer = displayio.Group()
         aqi_text_layer.append(Line(18, 25, 18, 30, color))
@@ -604,13 +604,17 @@ class CustomDisplay(displayio.Group):
             )
 
     def update_display(self):
-        temp_str = "{0:.1f}".format(self.temperature)
+        try:
+            temp_str = "{0:.1f}".format(self.temperature)
+        except ValueError:
+            temp_str = "{0:.1f}".format(888.8)
         if self.temperature < 0.0 and self.temperature > -10.0:
             temp_str = "+" + temp_str
         if self.temperature < 100.0 and self.temperature >= 0.0:
             temp_str = "+" + temp_str
         if self.temperature < 10.0 and self.temperature >= 0.0:
             temp_str = "+" + temp_str
+
 
         temp_color = self.color[0]
         if self.temperature < 65.0:
@@ -625,7 +629,10 @@ class CustomDisplay(displayio.Group):
         for i, ch in enumerate(temp_str):
             self.make_big_digit(ch, i, temp_color)
 
-        hum_str = str(round(self.humidity))
+        try:
+            hum_str = str(round(self.humidity))
+        except ValueError:
+            hum_str = str(888)
         if int(hum_str) < 100:
             hum_str = "+" + hum_str
         if int(hum_str) < 10:
@@ -636,14 +643,17 @@ class CustomDisplay(displayio.Group):
 
         self.make_droplet(self.humidity)
 
-        aqi_str = str(round(self.aqi))
+        try:
+            aqi_str = str(round(self.aqi))
+        except ValueError:
+            aqi_str = str(888)
         if int(aqi_str) < 100:
             aqi_str = "+" + aqi_str
         if int(aqi_str) < 10:
             aqi_str = "+" + aqi_str
 
         self.make_aqi(self.aqi, aqi_str)
-        
+
         gc.collect()
 
     def set_environmentals(self, temperature, humidity, aqi):
