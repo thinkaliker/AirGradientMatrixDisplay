@@ -35,7 +35,8 @@ secrets = {
     "password": getenv("CIRCUITPY_WIFI_PASSWORD"),
     "mqtt_host": getenv("MQTT_BROKER"),
     "mqtt_user": getenv("MQTT_USER"),
-    "mqtt_pass": getenv("MQTT_PASS")
+    "mqtt_pass": getenv("MQTT_PASS"),
+    "airgradient_id": getenv("AIRGRADIENT_ID")
 }
 gc.enable()
 matrix = Matrix(width=32, height=32)
@@ -104,10 +105,9 @@ mqtt_client = MQTT.MQTT(
     socket_pool=pool,
     ssl_context=ssl_context,
 )
-
-mqtt_topic_temp = f"homeassistant/sensor/ag_outdoors_temperature/state"
-mqtt_topic_hum = f"homeassistant/sensor/ag_outdoors_humidity/state"
+mqtt_topic = f"airgradient/readings/" + secrets["airgradient_id"]
 mqtt_topic_aqi = f"homeassistant/sensor/ag_outdoors_calc_aqi/state"
+mqtt_topic_night = f"homeassistant/binary_sensor/night_time/state"
 
 main_display = custom_display.CustomDisplay(matrix.display)
 
@@ -137,16 +137,16 @@ def publish(mqtt_client, userdata, topic, pid):
 
 def message(client, topic, message):
     print(f"New message on topic {topic}: {message}")
-    if topic == mqtt_topic_temp:
+    
+    if topic == mqtt_topic:
         try:
-            main_display.set_temperature(float(message))
+            parsed = json.loads(str(message))
+            main_display.set_temperature((float(parsed["atmpCompensated"]) * 9.0 / 5.0) + 32.0 )
+            main_display.set_humidity(float(parsed["rhumCompensated"]))
         except ValueError:
             main_display.set_temperature(float(888.8))
-    if topic == mqtt_topic_hum:
-        try:
-            main_display.set_humidity(float(message))
-        except ValueError:
             main_display.set_humidity(float(888))
+
     if topic == mqtt_topic_aqi:
         try:
             main_display.set_aqi(float(message))
@@ -164,14 +164,14 @@ mqtt_client.on_message = message
 print(f"Attempting to connect to {mqtt_client.broker}")
 mqtt_client.connect()
 
-print(f"Subscribing to {mqtt_topic_temp}")
-mqtt_client.subscribe(mqtt_topic_temp)
-
-print(f"Subscribing to {mqtt_topic_hum}")
-mqtt_client.subscribe(mqtt_topic_hum)
+print(f"Subscribing to {mqtt_topic}")
+mqtt_client.subscribe(mqtt_topic)
 
 print(f"Subscribing to {mqtt_topic_aqi}")
 mqtt_client.subscribe(mqtt_topic_aqi)
+
+print(f"Subscribing to {mqtt_topic_night}")
+mqtt_client.subscribe(mqtt_topic_night)
 
 reset_counter = 0
 
